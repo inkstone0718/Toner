@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>調音台 · Guitar Tuner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #2a2420;
+            --bg-deep: #1e1a17;
+            --wood: #8a5a34;
+            --wood-dark: #6b4226;
+            --wood-light: #a8734a;
+            --cream: #f5ebdd;
+            --amber: #d4a24c;
+            --sage: #8fae7f;
+            --coral: #c1613f;
+            --muted: #b8a88f;
+            --muted-dim: #7a6f60;
+            --brass: #c9a35c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at 50% -10%, #3a3128 0%, transparent 55%),
+                var(--bg);
+            color: var(--cream);
+            font-family: 'Work Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 460px;
+            background: linear-gradient(180deg, #332b24 0%, #241f1a 100%);
+            border-radius: 32px;
+            padding: 32px 28px 36px;
+            box-shadow:
+                0 30px 60px -20px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        h1 {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 28px;
+            margin: 6px 0 0;
+            color: var(--cream);
+        }
+
+        /* ---- Guitar + pegs ---- */
+        .instrument {
+            position: relative;
+            width: 100%;
+            max-width: 340px;
+            margin: 8px auto 22px;
+        }
+
+        .instrument svg {
+            width: 100%;
+            display: block;
+        }
+
+        .peg-wrap {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transform: translate(-50%, -50%);
+            transition: gap 0.2s ease;
+        }
+
+        .peg-btn {
+            position: relative;
+            width: 56px;
+            height: 34px;
+            border-radius: 17px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: linear-gradient(180deg, #4a3d32, #362c24);
+            color: var(--muted);
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .peg-btn:hover {
+            border-color: rgba(212, 162, 76, 0.5);
+            color: var(--cream);
+        }
+
+        .peg-btn.active {
+            background: linear-gradient(180deg, var(--amber), #b8863b);
+            color: #2a2420;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(212, 162, 76, 0.4);
+        }
+
+        .peg-btn.detected {
+            border-color: var(--sage);
+            color: var(--cream);
+            box-shadow: 0 0 0 3px rgba(143, 174, 127, 0.25);
+        }
+
+        .peg-btn .note-line {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .freq-mini {
+            display: none;
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 500;
+            font-size: 8px;
+            opacity: 0.75;
+            margin-top: 1px;
+            letter-spacing: 0.02em;
+        }
+
+        .arrow-btn {
+            display: none;
+            width: 26px;
+            height: 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #3a3128;
+            color: var(--amber);
+            font-size: 9px;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            padding: 0;
+        }
+
+        .arrow-btn:hover {
+            background: #4a3d32;
+            color: var(--cream);
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.92);
+        }
+
+        .card.adjust-mode .arrow-btn {
+            display: flex;
+        }
+
+        .card.adjust-mode .freq-mini {
+            display: block;
+        }
+
+        .card.adjust-mode .instrument {
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+
+        .mode-label {
+            text-align: center;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted-dim);
+            margin: -10px 0 14px;
+        }
+
+        .mode-label .mode-value {
+            color: var(--amber);
+            font-weight: 600;
+        }
+
+        .peg-btn .sub {
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 500;
+            font-size: 9px;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        /* left pegs point right, right pegs point left */
+        .peg-left {
+            left: 0;
+        }
+
+        .peg-right {
+            right: 0;
+        }
+
+        /* ---- Gauge ---- */
+        .gauge-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .gauge-wrap svg {
+            width: 100%;
+            display: block;
+        }
+
+        .needle {
+            transform-origin: 160px 160px;
+            transition: transform 0.12s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        .readout {
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .freq {
+            font-family: 'Fraunces', serif;
+            font-size: 15px;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+        }
+
+        .cents-label {
+            font-size: 11px;
+            color: var(--muted-dim);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ---- Controls ---- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+        }
+
+        #toggleBtn {
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 13px 30px;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            background: var(--wood);
+            color: var(--cream);
+            letter-spacing: 0.02em;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+        }
+
+        #toggleBtn:hover {
+            background: var(--wood-light);
+        }
+
+        #toggleBtn.listening {
+            background: linear-gradient(180deg, var(--coral), #a34d31);
+        }
+
+        #adjustBtn {
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 13px 24px;
+            border-radius: 100px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            background: transparent;
+            color: var(--muted);
+            letter-spacing: 0.02em;
+            transition: all 0.2s ease;
+        }
+
+        #adjustBtn:hover {
+            color: var(--cream);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        #adjustBtn.active {
+            background: linear-gradient(180deg, var(--sage), #6f8f66);
+            color: #20281d;
+            border-color: transparent;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted-dim);
+            margin-top: 12px;
+            min-height: 16px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .needle {
+                transition: none;
+            }
+
+            .peg-btn {
+                transition: none;
+            }
+        }
+
+        @media (max-width:380px) {
+            .card {
+                padding: 24px 18px 28px;
+            }
+
+            .peg-btn {
+                width: 48px;
+                height: 30px;
+                font-size: 13px;
+            }
+
+            .arrow-btn {
+                width: 22px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <header>
+            <div class="eyebrow">Guitar Tuner</div>
+            <h1>調音台</h1>
+        </header>
+
+        <div class="mode-label" id="modeLabel">目前模式：<span class="mode-value">自動偵測</span></div>
+
+        <div class="instrument">
+            <!-- peg groups: left side (from top) E2 A2 D3, right side G3 B3 E4 -->
+            <div class="peg-wrap peg-left" style="top:12%;">
+                <button class="arrow-btn" data-id="E2" data-dir="up" aria-label="升高 E2">▲</button>
+                <button class="peg-btn" data-id="E2" data-freq="82.41"><span class="note-line"><span
+                            class="letter">E</span><span class="sub">2</span></span><span class="freq-mini">82.4
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="E2" data-dir="down" aria-label="降低 E2">▼</button>
+            </div>
+            <div class="peg-wrap peg-left" style="top:36%;">
+                <button class="arrow-btn" data-id="A2" data-dir="up" aria-label="升高 A2">▲</button>
+                <button class="peg-btn" data-id="A2" data-freq="110.00"><span class="note-line"><span
+                            class="letter">A</span><span class="sub">2</span></span><span class="freq-mini">110.0
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="A2" data-dir="down" aria-label="降低 A2">▼</button>
+            </div>
+            <div class="peg-wrap peg-left" style="top:60%;">
+                <button class="arrow-btn" data-id="D3" data-dir="up" aria-label="升高 D3">▲</button>
+                <button class="peg-btn" data-id="D3" data-freq="146.83"><span class="note-line"><span
+                            class="letter">D</span><span class="sub">3</span></span><span class="freq-mini">146.8
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="D3" data-dir="down" aria-label="降低 D3">▼</button>
+            </div>
+
+            <div class="peg-wrap peg-right" style="top:12%;">
+                <button class="arrow-btn" data-id="G3" data-dir="up" aria-label="升高 G3">▲</button>
+                <button class="peg-btn" data-id="G3" data-freq="196.00"><span class="note-line"><span
+                            class="letter">G</span><span class="sub">3</span></span><span class="freq-mini">196.0
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="G3" data-dir="down" aria-label="降低 G3">▼</button>
+            </div>
+            <div class="peg-wrap peg-right" style="top:36%;">
+                <button class="arrow-btn" data-id="B3" data-dir="up" aria-label="升高 B3">▲</button>
+                <button class="peg-btn" data-id="B3" data-freq="246.94"><span class="note-line"><span
+                            class="letter">B</span><span class="sub">3</span></span><span class="freq-mini">246.9
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="B3" data-dir="down" aria-label="降低 B3">▼</button>
+            </div>
+            <div class="peg-wrap peg-right" style="top:60%;">
+                <button class="arrow-btn" data-id="E4" data-dir="up" aria-label="升高 E4">▲</button>
+                <button class="peg-btn" data-id="E4" data-freq="329.63"><span class="note-line"><span
+                            class="letter">E</span><span class="sub">4</span></span><span class="freq-mini">329.6
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="E4" data-dir="down" aria-label="降低 E4">▼</button>
+            </div>
+
+            <svg viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#a8734a" />
+                        <stop offset="100%" stop-color="#6b4226" />
+                    </linearGradient>
+                    <linearGradient id="neckGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#5a3a26" />
+                        <stop offset="100%" stop-color="#3f2818" />
+                    </linearGradient>
+                    <radialGradient id="soundhole" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#1a120b" />
+                        <stop offset="100%" stop-color="#2a1c10" />
+                    </radialGradient>
+                </defs>
+
+                <!-- headstock -->
+                <path d="M130 20 Q120 10 132 4 L188 4 Q200 10 190 20 L190 55 L130 55 Z" fill="url(#neckGrad)" />
+                <!-- tuning peg posts (visual only) -->
+                <circle cx="140" cy="25" r="4.5" fill="var(--brass)" />
+                <circle cx="140" cy="40" r="4.5" fill="var(--brass)" />
+                <circle cx="140" cy="55" r="4.5" fill="var(--brass)" />
+                <circle cx="180" cy="25" r="4.5" fill="var(--brass)" />
+                <circle cx="180" cy="40" r="4.5" fill="var(--brass)" />
+                <circle cx="180" cy="55" r="4.5" fill="var(--brass)" />
+
+                <!-- neck -->
+                <rect x="148" y="55" width="24" height="130" fill="url(#neckGrad)" />
+                <!-- frets -->
+                <g stroke="#c9a35c" stroke-width="1.4" opacity="0.5">
+                    <line x1="148" y1="80" x2="172" y2="80" />
+                    <line x1="148" y1="105" x2="172" y2="105" />
+                    <line x1="148" y1="130" x2="172" y2="130" />
+                    <line x1="148" y1="155" x2="172" y2="155" />
+                </g>
+
+                <!-- body: figure-eight shape -->
+                <path d="M160 175
+               C 110 175, 78 205, 78 245
+               C 78 280, 100 300, 100 320
+               C 100 345, 122 366, 160 366
+               C 198 366, 220 345, 220 320
+               C 220 300, 242 280, 242 245
+               C 242 205, 210 175, 160 175 Z" fill="url(#bodyGrad)" stroke="#4a2f1c" stroke-width="2" />
+
+                <!-- soundhole -->
+                <circle cx="160" cy="255" r="34" fill="url(#soundhole)" stroke="#3a2414" stroke-width="3" />
+                <circle cx="160" cy="255" r="38" fill="none" stroke="#c9a35c" stroke-width="1.5" opacity="0.6" />
+
+                <!-- bridge -->
+                <rect x="130" y="308" width="60" height="10" rx="4" fill="#2a1c10" />
+
+                <!-- strings -->
+                <g stroke="#e8dcc4" stroke-width="1" opacity="0.85">
+                    <line x1="151" y1="20" x2="151" y2="312" />
+                    <line x1="156" y1="30" x2="156" y2="312" />
+                    <line x1="161" y1="45" x2="161" y2="312" />
+                    <line x1="167" y1="45" x2="167" y2="312" />
+                    <line x1="172" y1="30" x2="172" y2="312" />
+                    <line x1="177" y1="20" x2="177" y2="312" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Gauge -->
+        <div class="gauge-wrap">
+            <svg viewBox="0 0 320 190">
+                <defs>
+                    <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#c1613f" />
+                        <stop offset="45%" stop-color="#d4a24c" />
+                        <stop offset="50%" stop-color="#8fae7f" />
+                        <stop offset="55%" stop-color="#d4a24c" />
+                        <stop offset="100%" stop-color="#c1613f" />
+                    </linearGradient>
+                </defs>
+                <!-- background plate -->
+                <path d="M20 170 A140 140 0 0 1 300 170" fill="none" stroke="#241f1a" stroke-width="26"
+                    stroke-linecap="round" />
+                <!-- colored arc -->
+                <path d="M20 170 A140 140 0 0 1 300 170" fill="none" stroke="url(#arcGrad)" stroke-width="10"
+                    stroke-linecap="round" opacity="0.9" />
+                <!-- tick marks -->
+                <g stroke="#7a6f60" stroke-width="2">
+                    <line x1="160" y1="30" x2="160" y2="42" />
+                    <line x1="90" y1="52" x2="98" y2="61" />
+                    <line x1="230" y1="52" x2="222" y2="61" />
+                    <line x1="42" y1="118" x2="53" y2="112" />
+                    <line x1="278" y1="118" x2="267" y2="112" />
+                </g>
+                <text x="160" y="24" text-anchor="middle" fill="#b8a88f" font-size="11" font-family="Work Sans">0</text>
+                <text x="46" y="150" text-anchor="middle" fill="#b8a88f" font-size="10"
+                    font-family="Work Sans">-50¢</text>
+                <text x="274" y="150" text-anchor="middle" fill="#b8a88f" font-size="10"
+                    font-family="Work Sans">+50¢</text>
+
+                <!-- needle -->
+                <g class="needle" id="needle">
+                    <line x1="160" y1="160" x2="160" y2="45" stroke="#f5ebdd" stroke-width="3" stroke-linecap="round" />
+                    <circle cx="160" cy="160" r="9" fill="var(--brass)" />
+                    <circle cx="160" cy="160" r="3.5" fill="#241f1a" />
+                </g>
+            </svg>
+        </div>
+
+        <div class="readout">
+            <div class="freq" id="freqDisplay">尚未偵測</div>
+            <div class="cents-label" id="centsLabel">點擊「開始測音」自動判斷最接近的弦</div>
+        </div>
+
+        <div class="controls">
+            <button id="toggleBtn">開始測音</button>
+            <button id="adjustBtn">調整目標音高</button>
+        </div>
+        <div class="status" id="statusMsg"></div>
+    </div>
+
+    <script>
+        (function () {
+            const peBtns = document.querySelectorAll('.peg-btn');
+            const arrowBtns = document.querySelectorAll('.arrow-btn');
+            const needle = document.getElementById('needle');
+            const freqDisplay = document.getElementById('freqDisplay');
+            const centsLabel = document.getElementById('centsLabel');
+            const toggleBtn = document.getElementById('toggleBtn');
+            const adjustBtn = document.getElementById('adjustBtn');
+            const statusMsg = document.getElementById('statusMsg');
+            const modeLabel = document.getElementById('modeLabel');
+            const card = document.querySelector('.card');
+
+            const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+
+            function noteNameFromFreq(freq) {
+                const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+                const letter = NOTE_NAMES[((midi % 12) + 12) % 12];
+                const octave = Math.floor(midi / 12) - 1;
+                return { letter, octave, full: `${letter}${octave}` };
+            }
+
+            const STRINGS = Array.from(peBtns).map(btn => ({
+                id: btn.dataset.id,
+                freq: parseFloat(btn.dataset.freq),
+                el: btn,
+                miniEl: btn.querySelector('.freq-mini'),
+                letterEl: btn.querySelector('.letter'),
+                octaveEl: btn.querySelector('.sub')
+            }));
+
+            function updateDisplay(s) {
+                if (s.miniEl) s.miniEl.textContent = `${s.freq.toFixed(1)} Hz`;
+                const nn = noteNameFromFreq(s.freq);
+                if (s.letterEl) s.letterEl.textContent = nn.letter;
+                if (s.octaveEl) s.octaveEl.textContent = nn.octave;
+            }
+            STRINGS.forEach(updateDisplay);
+
+            // mode: 'auto' (自動判斷最接近的弦) or 'fixed' (鎖定單一目標音)
+            let mode = 'auto';
+            let targetId = null;
+            let targetFreq = null;
+
+            function clearDetected() {
+                STRINGS.forEach(s => s.el.classList.remove('detected'));
+            }
+
+            function setMode(newMode, id, freq) {
+                mode = newMode;
+                if (mode === 'fixed') {
+                    targetId = id;
+                    targetFreq = freq;
+                    STRINGS.forEach(s => s.el.classList.toggle('active', s.id === id));
+                    clearDetected();
+                    const nn = noteNameFromFreq(freq);
+                    modeLabel.innerHTML = `目前模式：<span class="mode-value">固定目標音 ${nn.full}</span>`;
+                    if (!listening) {
+                        freqDisplay.textContent = `目標音：${nn.full} · ${freq.toFixed(1)} Hz`;
+                        centsLabel.textContent = '再次點擊該按鈕可回到自動模式';
+                    }
+                } else {
+                    targetId = null;
+                    targetFreq = null;
+                    STRINGS.forEach(s => s.el.classList.remove('active'));
+                    modeLabel.innerHTML = `目前模式：<span class="mode-value">自動偵測</span>`;
+                    if (!listening) {
+                        freqDisplay.textContent = '尚未偵測';
+                        centsLabel.textContent = '點擊「開始測音」自動判斷最接近的弦';
+                    }
+                }
+            }
+
+            function nearestString(freq) {
+                let best = null, bestAbsCents = Infinity;
+                STRINGS.forEach(s => {
+                    const cents = 1200 * Math.log2(freq / s.freq);
+                    if (Math.abs(cents) < bestAbsCents) {
+                        bestAbsCents = Math.abs(cents);
+                        best = { id: s.id, freq: s.freq, cents };
+                    }
+                });
+                return best;
+            }
+
+            peBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    const s = STRINGS.find(x => x.id === id);
+                    if (mode === 'fixed' && targetId === id) {
+                        // clicking the already-selected string returns to auto mode
+                        setMode('auto');
+                    } else {
+                        setMode('fixed', id, s.freq);
+                    }
+                });
+            });
+
+            // ---- 目標音高微調 (上下箭頭,以半音為單位) ----
+            const CENTS_STEP = 100; // 每次點擊調整一個半音(100 音分)
+
+            function adjustStringFreq(id, deltaCents) {
+                const s = STRINGS.find(x => x.id === id);
+                if (!s) return;
+                s.freq = s.freq * Math.pow(2, deltaCents / 1200);
+                updateDisplay(s);
+                if (mode === 'fixed' && targetId === id) {
+                    targetFreq = s.freq;
+                    const nn = noteNameFromFreq(targetFreq);
+                    modeLabel.innerHTML = `目前模式：<span class="mode-value">固定目標音 ${nn.full}</span>`;
+                    if (!listening) {
+                        freqDisplay.textContent = `目標音：${nn.full} · ${targetFreq.toFixed(1)} Hz`;
+                    }
+                }
+            }
+
+            arrowBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.dataset.id;
+                    const dir = btn.dataset.dir;
+                    adjustStringFreq(id, dir === 'up' ? CENTS_STEP : -CENTS_STEP);
+                });
+            });
+
+            adjustBtn.addEventListener('click', () => {
+                const isActive = card.classList.toggle('adjust-mode');
+                adjustBtn.classList.toggle('active', isActive);
+                adjustBtn.textContent = isActive ? '完成調整' : '調整目標音高';
+            });
+
+            let audioCtx, analyser, mic, dataArray, rafId;
+            let listening = false;
+            const freqHistory = []; // 最近幾次有效偵測結果,用於中位數平滑
+
+            function medianSmooth(freq) {
+                freqHistory.push(freq);
+                if (freqHistory.length > 5) freqHistory.shift();
+                const sorted = [...freqHistory].sort((a, b) => a - b);
+                return sorted[Math.floor(sorted.length / 2)];
+            }
+
+            function setNeedle(cents) {
+                // clamp to [-50, 50] cents, map to [-65, 65] degrees
+                const clamped = Math.max(-50, Math.min(50, cents));
+                const deg = (clamped / 50) * 65;
+                needle.style.transform = `rotate(${deg}deg)`;
+            }
+
+            function colorFor(cents) {
+                const abs = Math.abs(cents);
+                if (abs <= 5) return 'var(--sage)';
+                if (abs <= 15) return 'var(--amber)';
+                return 'var(--coral)';
+            }
+
+            // Autocorrelation pitch detection with noise-resistant refinements:
+            // 1) RMS noise floor gate, 2) Hann window to reduce spectral leakage,
+            // 3) clarity (normalized peak) threshold to reject non-tonal noise
+            function autoCorrelate(buf, sampleRate) {
+                const SIZE = buf.length;
+                let rms = 0;
+                for (let i = 0; i < SIZE; i++) { rms += buf[i] * buf[i]; }
+                rms = Math.sqrt(rms / SIZE);
+                if (rms < 0.012) return { freq: -1, clarity: 0 }; // 環境噪音底線,太安靜視為無訊號
+
+                let r1 = 0, r2 = SIZE - 1, thres = 0.2;
+                for (let i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
+                for (let i = 1; i < SIZE / 2; i++) { if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; } }
+
+                const trimmed = buf.slice(r1, r2);
+                const newSize = trimmed.length;
+
+                // 套用漢寧窗,降低雜訊造成的頻譜洩漏
+                const windowed = new Float32Array(newSize);
+                for (let i = 0; i < newSize; i++) {
+                    const w = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (newSize - 1 || 1));
+                    windowed[i] = trimmed[i] * w;
+                }
+
+                const c = new Array(newSize).fill(0);
+                for (let i = 0; i < newSize; i++) {
+                    for (let j = 0; j < newSize - i; j++) {
+                        c[i] += windowed[j] * windowed[j + i];
+                    }
+                }
+                let d = 0;
+                while (d < newSize - 1 && c[d] > c[d + 1]) d++;
+                let maxval = -1, maxpos = -1;
+                for (let i = d; i < newSize; i++) {
+                    if (c[i] > maxval) { maxval = c[i]; maxpos = i; }
+                }
+                let T0 = maxpos;
+                if (T0 <= 0) return { freq: -1, clarity: 0 };
+
+                // 清晰度 = 峰值相對於零延遲能量的比值,越接近 1 代表音高越明確、
+                // 越低代表訊號較接近雜訊而非穩定的樂音
+                const clarity = c[0] > 0 ? maxval / c[0] : 0;
+                if (clarity < 0.85) return { freq: -1, clarity };
+
+                const x1 = c[T0 - 1] || c[T0], x2 = c[T0], x3 = c[T0 + 1] || c[T0];
+                const a = (x1 + x3 - 2 * x2) / 2, b = (x3 - x1) / 2;
+                if (a) T0 = T0 - b / (2 * a);
+
+                return { freq: sampleRate / T0, clarity };
+            }
+
+            function freqToCents(freq, ref) {
+                return 1200 * Math.log2(freq / ref);
+            }
+
+            function loop() {
+                analyser.getFloatTimeDomainData(dataArray);
+                const result = autoCorrelate(dataArray, audioCtx.sampleRate);
+
+                if (result.freq !== -1 && result.freq > 30 && result.freq < 1200) {
+                    const freq = medianSmooth(result.freq);
+                    let cents, noteFull, refFreq;
+
+                    if (mode === 'fixed') {
+                        cents = freqToCents(freq, targetFreq);
+                        noteFull = noteNameFromFreq(targetFreq).full;
+                        refFreq = targetFreq;
+                    } else {
+                        const nearest = nearestString(freq);
+                        cents = nearest.cents;
+                        refFreq = nearest.freq;
+                        noteFull = noteNameFromFreq(nearest.freq).full;
+                        clearDetected();
+                        const matched = STRINGS.find(s => s.id === nearest.id);
+                        if (matched) matched.el.classList.add('detected');
+                    }
+
+                    setNeedle(cents);
+                    const sign = cents >= 0 ? '+' : '';
+                    const prefix = mode === 'fixed' ? '目標' : '判斷為';
+                    freqDisplay.textContent = `${freq.toFixed(1)} Hz  ·  ${prefix} ${noteFull} ${refFreq.toFixed(1)} Hz`;
+                    centsLabel.textContent = Math.abs(cents) <= 5
+                        ? '✓ 音準完美'
+                        : `${sign}${cents.toFixed(0)} 音分`;
+                    needle.style.setProperty('color', colorFor(cents));
+                    needle.querySelector('line').setAttribute('stroke', colorFor(cents));
+                } else {
+                    freqHistory.length = 0; // 雜訊或靜音時清空平滑緩衝,避免殘留舊音高
+                    centsLabel.textContent = '聆聽中…請撥弦';
+                }
+                rafId = requestAnimationFrame(loop);
+            }
+
+            async function startListening() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: false, noiseSuppression: false, autoGainControl: false
+                        }
+                    });
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 2048;
+                    dataArray = new Float32Array(analyser.fftSize);
+                    mic = audioCtx.createMediaStreamSource(stream);
+
+                    // 抗噪濾波鏈:先濾掉低頻電流聲/環境隆隆聲,再濾掉高頻噝聲,
+                    // 只留下吉他基音會出現的頻段,提升偵測的抗噪能力
+                    const highpass = audioCtx.createBiquadFilter();
+                    highpass.type = 'highpass';
+                    highpass.frequency.value = 70;
+                    highpass.Q.value = 0.7;
+
+                    const lowpass = audioCtx.createBiquadFilter();
+                    lowpass.type = 'lowpass';
+                    lowpass.frequency.value = 1200;
+                    lowpass.Q.value = 0.7;
+
+                    mic.connect(highpass);
+                    highpass.connect(lowpass);
+                    lowpass.connect(analyser);
+
+                    listening = true;
+                    freqHistory.length = 0;
+                    toggleBtn.textContent = '停止測音';
+                    toggleBtn.classList.add('listening');
+                    statusMsg.textContent = '';
+                    loop();
+                } catch (err) {
+                    statusMsg.textContent = '無法取得麥克風權限，請確認瀏覽器設定';
+                }
+            }
+
+            function stopListening() {
+                listening = false;
+                freqHistory.length = 0;
+                if (rafId) cancelAnimationFrame(rafId);
+                if (audioCtx) audioCtx.close();
+                toggleBtn.textContent = '開始測音';
+                toggleBtn.classList.remove('listening');
+                setNeedle(0);
+                clearDetected();
+                centsLabel.textContent = '已停止';
+                freqDisplay.textContent = mode === 'fixed'
+                    ? `目標音：${noteNameFromFreq(targetFreq).full} · ${targetFreq.toFixed(1)} Hz`
+                    : '尚未偵測';
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                if (listening) stopListening();
+                else startListening();
+            });
+        })();
+    </script>
+
+</body>
+
+</html>
