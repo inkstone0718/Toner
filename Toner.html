@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>調音台 · Guitar Tuner</title>
+    <title>調音台 · Guitar & Bass Tuner</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap"
@@ -259,6 +259,41 @@
             margin-top: 2px;
         }
 
+        /* ---- Instrument Switcher ---- */
+        .instrument-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 20px;
+        }
+
+        .inst-btn {
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 7px 20px;
+            border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer;
+            background: transparent;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .inst-btn:hover {
+            color: var(--cream);
+            border-color: rgba(255,255,255,0.25);
+        }
+
+        .inst-btn.active {
+            background: linear-gradient(180deg, var(--amber), #b8863b);
+            color: #2a2420;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(212,162,76,0.35);
+        }
+
         /* ---- Controls ---- */
         .controls {
             display: flex;
@@ -357,13 +392,19 @@
 
     <div class="card">
         <header>
-            <div class="eyebrow">Guitar Tuner</div>
+            <div class="eyebrow" id="eyebrow">Guitar Tuner</div>
             <h1>調音台</h1>
         </header>
 
+        <div class="instrument-switcher">
+            <button class="inst-btn active" id="instGuitar">🎸 吉他</button>
+            <button class="inst-btn" id="instBass">🎵 貝斯</button>
+        </div>
+
         <div class="mode-label" id="modeLabel">目前模式：<span class="mode-value">自動偵測</span></div>
 
-        <div class="instrument">
+        <!-- ====== Guitar Instrument ====== -->
+        <div class="instrument" id="guitarInstrument">
             <!-- peg groups: left side (from top) E2 A2 D3, right side G3 B3 E4 -->
             <div class="peg-wrap peg-left" style="top:12%;">
                 <button class="arrow-btn" data-id="E2" data-dir="up" aria-label="升高 E2">▲</button>
@@ -473,6 +514,132 @@
             </svg>
         </div>
 
+        <!-- ====== Bass Instrument ====== -->
+        <div class="instrument" id="bassInstrument" style="display:none;">
+            <!-- Bass: left side E1 D2, right side A1 G2 -->
+            <div class="peg-wrap peg-left" style="top:20%;">
+                <button class="arrow-btn" data-id="bE1" data-dir="up" aria-label="升高 E1">▲</button>
+                <button class="peg-btn" data-id="bE1" data-freq="41.20"><span class="note-line"><span
+                            class="letter">E</span><span class="sub">1</span></span><span class="freq-mini">41.2
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="bE1" data-dir="down" aria-label="降低 E1">▼</button>
+            </div>
+            <div class="peg-wrap peg-left" style="top:52%;">
+                <button class="arrow-btn" data-id="bD2" data-dir="up" aria-label="升高 D2">▲</button>
+                <button class="peg-btn" data-id="bD2" data-freq="73.42"><span class="note-line"><span
+                            class="letter">D</span><span class="sub">2</span></span><span class="freq-mini">73.4
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="bD2" data-dir="down" aria-label="降低 D2">▼</button>
+            </div>
+
+            <div class="peg-wrap peg-right" style="top:20%;">
+                <button class="arrow-btn" data-id="bA1" data-dir="up" aria-label="升高 A1">▲</button>
+                <button class="peg-btn" data-id="bA1" data-freq="55.00"><span class="note-line"><span
+                            class="letter">A</span><span class="sub">1</span></span><span class="freq-mini">55.0
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="bA1" data-dir="down" aria-label="降低 A1">▼</button>
+            </div>
+            <div class="peg-wrap peg-right" style="top:52%;">
+                <button class="arrow-btn" data-id="bG2" data-dir="up" aria-label="升高 G2">▲</button>
+                <button class="peg-btn" data-id="bG2" data-freq="98.00"><span class="note-line"><span
+                            class="letter">G</span><span class="sub">2</span></span><span class="freq-mini">98.0
+                        Hz</span></button>
+                <button class="arrow-btn" data-id="bG2" data-dir="down" aria-label="降低 G2">▼</button>
+            </div>
+
+            <svg viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="bassBodyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#3a5a7a" />
+                        <stop offset="100%" stop-color="#1e3348" />
+                    </linearGradient>
+                    <linearGradient id="bassNeckGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stop-color="#4a3a2a" />
+                        <stop offset="100%" stop-color="#2f2318" />
+                    </linearGradient>
+                </defs>
+
+                <!-- headstock (bass-style angled) -->
+                <path d="M136 4 L184 4 Q196 10 192 24 L188 54 L132 54 Q128 40 132 24 Z" fill="url(#bassNeckGrad)" />
+                <!-- 4 tuning pegs -->
+                <circle cx="142" cy="18" r="5" fill="var(--brass)" />
+                <circle cx="142" cy="36" r="5" fill="var(--brass)" />
+                <circle cx="178" cy="18" r="5" fill="var(--brass)" />
+                <circle cx="178" cy="36" r="5" fill="var(--brass)" />
+
+                <!-- long neck (bass neck is longer) -->
+                <rect x="150" y="54" width="20" height="148" fill="url(#bassNeckGrad)" />
+                <!-- frets (more widely spaced for bass) -->
+                <g stroke="#c9a35c" stroke-width="1.6" opacity="0.45">
+                    <line x1="150" y1="84" x2="170" y2="84" />
+                    <line x1="150" y1="114" x2="170" y2="114" />
+                    <line x1="150" y1="142" x2="170" y2="142" />
+                    <line x1="150" y1="168" x2="170" y2="168" />
+                    <line x1="150" y1="192" x2="170" y2="192" />
+                </g>
+                <!-- fret dot marker -->
+                <circle cx="160" cy="128" r="3" fill="#c9a35c" opacity="0.5" />
+
+                <!-- body: solid bass shape (more angular, contoured) -->
+                <path d="M160 200
+               C 108 200, 76 222, 76 258
+               C 76 286, 95 308, 98 332
+               C 100 352, 120 368, 148 368
+               L 172 368
+               C 200 368, 218 352, 222 332
+               C 226 308, 244 286, 244 258
+               C 244 222, 212 200, 160 200 Z"
+                    fill="url(#bassBodyGrad)" stroke="#1a2e40" stroke-width="2" />
+                <!-- body binding highlight -->
+                <path d="M160 204
+               C 110 204, 80 225, 80 258
+               C 80 284, 98 306, 101 330
+               C 103 349, 122 364, 148 364
+               L 172 364
+               C 198 364, 217 349, 219 330
+               C 222 306, 240 284, 240 258
+               C 240 225, 210 204, 160 204 Z"
+                    fill="none" stroke="#5a8ab0" stroke-width="1" opacity="0.4" />
+
+                <!-- pickups (bass has visible pickups) -->
+                <rect x="132" y="250" width="56" height="14" rx="3" fill="#141e28" stroke="#2a4a68" stroke-width="1" />
+                <rect x="136" y="253" width="48" height="8" rx="2" fill="#0e1720" />
+                <!-- pickup poles -->
+                <g fill="#c9a35c" opacity="0.7">
+                    <circle cx="146" cy="257" r="2" />
+                    <circle cx="154" cy="257" r="2" />
+                    <circle cx="162" cy="257" r="2" />
+                    <circle cx="170" cy="257" r="2" />
+                </g>
+
+                <rect x="132" y="276" width="56" height="12" rx="3" fill="#141e28" stroke="#2a4a68" stroke-width="1" />
+                <rect x="136" y="279" width="48" height="6" rx="2" fill="#0e1720" />
+                <g fill="#c9a35c" opacity="0.7">
+                    <circle cx="146" cy="282" r="2" />
+                    <circle cx="154" cy="282" r="2" />
+                    <circle cx="162" cy="282" r="2" />
+                    <circle cx="170" cy="282" r="2" />
+                </g>
+
+                <!-- bridge -->
+                <rect x="133" y="318" width="54" height="12" rx="3" fill="#1a2e40" stroke="#2a4a68" stroke-width="1" />
+                <g fill="#c9a35c" opacity="0.6">
+                    <rect x="138" y="320" width="6" height="8" rx="1" />
+                    <rect x="148" y="320" width="6" height="8" rx="1" />
+                    <rect x="158" y="320" width="6" height="8" rx="1" />
+                    <rect x="168" y="320" width="6" height="8" rx="1" />
+                </g>
+
+                <!-- 4 bass strings (thicker) -->
+                <g stroke="#d0c8b0" opacity="0.9">
+                    <line x1="153" y1="16" x2="153" y2="322" stroke-width="2.2" />
+                    <line x1="158" y1="28" x2="158" y2="322" stroke-width="1.8" />
+                    <line x1="163" y1="28" x2="163" y2="322" stroke-width="1.4" />
+                    <line x1="168" y1="16" x2="168" y2="322" stroke-width="1.0" />
+                </g>
+            </svg>
+        </div>
+
         <!-- Gauge -->
         <div class="gauge-wrap">
             <svg viewBox="0 0 320 190">
@@ -528,8 +695,6 @@
 
     <script>
         (function () {
-            const peBtns = document.querySelectorAll('.peg-btn');
-            const arrowBtns = document.querySelectorAll('.arrow-btn');
             const needle = document.getElementById('needle');
             const freqDisplay = document.getElementById('freqDisplay');
             const centsLabel = document.getElementById('centsLabel');
@@ -538,6 +703,11 @@
             const statusMsg = document.getElementById('statusMsg');
             const modeLabel = document.getElementById('modeLabel');
             const card = document.querySelector('.card');
+            const eyebrow = document.getElementById('eyebrow');
+            const instGuitar = document.getElementById('instGuitar');
+            const instBass = document.getElementById('instBass');
+            const guitarInstrument = document.getElementById('guitarInstrument');
+            const bassInstrument = document.getElementById('bassInstrument');
 
             const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 
@@ -548,7 +718,13 @@
                 return { letter, octave, full: `${letter}${octave}` };
             }
 
-            const STRINGS = Array.from(peBtns).map(btn => ({
+            // ---- Instrument State ----
+            let currentInstrument = 'guitar'; // 'guitar' | 'bass'
+
+            // Guitar strings
+            const guitarPegBtns = guitarInstrument.querySelectorAll('.peg-btn');
+            const guitarArrowBtns = guitarInstrument.querySelectorAll('.arrow-btn');
+            const GUITAR_STRINGS = Array.from(guitarPegBtns).map(btn => ({
                 id: btn.dataset.id,
                 freq: parseFloat(btn.dataset.freq),
                 el: btn,
@@ -557,13 +733,31 @@
                 octaveEl: btn.querySelector('.sub')
             }));
 
+            // Bass strings
+            const bassPegBtns = bassInstrument.querySelectorAll('.peg-btn');
+            const bassArrowBtns = bassInstrument.querySelectorAll('.arrow-btn');
+            const BASS_STRINGS = Array.from(bassPegBtns).map(btn => ({
+                id: btn.dataset.id,
+                freq: parseFloat(btn.dataset.freq),
+                el: btn,
+                miniEl: btn.querySelector('.freq-mini'),
+                letterEl: btn.querySelector('.letter'),
+                octaveEl: btn.querySelector('.sub')
+            }));
+
+            // Active string set pointer
+            let STRINGS = GUITAR_STRINGS;
+            let peBtns = guitarPegBtns;
+            let arrowBtns = guitarArrowBtns;
+
             function updateDisplay(s) {
                 if (s.miniEl) s.miniEl.textContent = `${s.freq.toFixed(1)} Hz`;
                 const nn = noteNameFromFreq(s.freq);
                 if (s.letterEl) s.letterEl.textContent = nn.letter;
                 if (s.octaveEl) s.octaveEl.textContent = nn.octave;
             }
-            STRINGS.forEach(updateDisplay);
+            GUITAR_STRINGS.forEach(updateDisplay);
+            BASS_STRINGS.forEach(updateDisplay);
 
             // mode: 'auto' (自動判斷最接近的弦) or 'fixed' (鎖定單一目標音)
             let mode = 'auto';
@@ -611,21 +805,25 @@
                 return best;
             }
 
-            peBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const id = btn.dataset.id;
-                    const s = STRINGS.find(x => x.id === id);
-                    if (mode === 'fixed' && targetId === id) {
-                        // clicking the already-selected string returns to auto mode
-                        setMode('auto');
-                    } else {
-                        setMode('fixed', id, s.freq);
-                    }
+            function bindPegBtns(pegBtnsNodeList) {
+                pegBtnsNodeList.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.id;
+                        const s = STRINGS.find(x => x.id === id);
+                        if (!s) return;
+                        if (mode === 'fixed' && targetId === id) {
+                            setMode('auto');
+                        } else {
+                            setMode('fixed', id, s.freq);
+                        }
+                    });
                 });
-            });
+            }
+            bindPegBtns(guitarPegBtns);
+            bindPegBtns(bassPegBtns);
 
             // ---- 目標音高微調 (上下箭頭,以半音為單位) ----
-            const CENTS_STEP = 100; // 每次點擊調整一個半音(100 音分)
+            const CENTS_STEP = 100;
 
             function adjustStringFreq(id, deltaCents) {
                 const s = STRINGS.find(x => x.id === id);
@@ -642,20 +840,61 @@
                 }
             }
 
-            arrowBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = btn.dataset.id;
-                    const dir = btn.dataset.dir;
-                    adjustStringFreq(id, dir === 'up' ? CENTS_STEP : -CENTS_STEP);
+            function bindArrowBtns(arrowBtnsNodeList) {
+                arrowBtnsNodeList.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.id;
+                        const dir = btn.dataset.dir;
+                        adjustStringFreq(id, dir === 'up' ? CENTS_STEP : -CENTS_STEP);
+                    });
                 });
-            });
+            }
+            bindArrowBtns(guitarArrowBtns);
+            bindArrowBtns(bassArrowBtns);
 
             adjustBtn.addEventListener('click', () => {
                 const isActive = card.classList.toggle('adjust-mode');
                 adjustBtn.classList.toggle('active', isActive);
                 adjustBtn.textContent = isActive ? '完成調整' : '調整目標音高';
             });
+
+            // ---- 樂器切換 ----
+            function switchInstrument(inst) {
+                if (currentInstrument === inst) return;
+                currentInstrument = inst;
+
+                // stop listening on switch
+                if (listening) stopListening();
+                setMode('auto');
+
+                if (inst === 'guitar') {
+                    STRINGS = GUITAR_STRINGS;
+                    peBtns = guitarPegBtns;
+                    arrowBtns = guitarArrowBtns;
+                    guitarInstrument.style.display = '';
+                    bassInstrument.style.display = 'none';
+                    instGuitar.classList.add('active');
+                    instBass.classList.remove('active');
+                    eyebrow.textContent = 'Guitar Tuner';
+                    centsLabel.textContent = '點擊「開始測音」自動判斷最接近的弦';
+                } else {
+                    STRINGS = BASS_STRINGS;
+                    peBtns = bassPegBtns;
+                    arrowBtns = bassArrowBtns;
+                    guitarInstrument.style.display = 'none';
+                    bassInstrument.style.display = '';
+                    instGuitar.classList.remove('active');
+                    instBass.classList.add('active');
+                    eyebrow.textContent = 'Bass Tuner';
+                    centsLabel.textContent = '點擊「開始測音」自動判斷最接近的弦';
+                }
+                freqDisplay.textContent = '尚未偵測';
+                setNeedle(0);
+            }
+
+            instGuitar.addEventListener('click', () => switchInstrument('guitar'));
+            instBass.addEventListener('click', () => switchInstrument('bass'));
 
             let audioCtx, analyser, mic, dataArray, rafId;
             let listening = false;
@@ -741,7 +980,10 @@
                 analyser.getFloatTimeDomainData(dataArray);
                 const result = autoCorrelate(dataArray, audioCtx.sampleRate);
 
-                if (result.freq !== -1 && result.freq > 30 && result.freq < 1200) {
+                // bass lowest string E1 = 41.2 Hz; guitar highest E4 = 329.63 Hz
+                const freqMin = currentInstrument === 'bass' ? 25 : 60;
+                const freqMax = currentInstrument === 'bass' ? 350 : 1200;
+                if (result.freq !== -1 && result.freq > freqMin && result.freq < freqMax) {
                     const freq = medianSmooth(result.freq);
                     let cents, noteFull, refFreq;
 
@@ -788,16 +1030,16 @@
                     dataArray = new Float32Array(analyser.fftSize);
                     mic = audioCtx.createMediaStreamSource(stream);
 
-                    // 抗噪濾波鏈:先濾掉低頻電流聲/環境隆隆聲,再濾掉高頻噝聲,
-                    // 只留下吉他基音會出現的頻段,提升偵測的抗噪能力
+                    // 抗噪濾波鏈：根據樂器調整頻段
+                    // 貝斯基音最低約 41 Hz，吉他基音最低約 82 Hz
                     const highpass = audioCtx.createBiquadFilter();
                     highpass.type = 'highpass';
-                    highpass.frequency.value = 70;
+                    highpass.frequency.value = currentInstrument === 'bass' ? 25 : 70;
                     highpass.Q.value = 0.7;
 
                     const lowpass = audioCtx.createBiquadFilter();
                     lowpass.type = 'lowpass';
-                    lowpass.frequency.value = 1200;
+                    lowpass.frequency.value = currentInstrument === 'bass' ? 350 : 1200;
                     lowpass.Q.value = 0.7;
 
                     mic.connect(highpass);
