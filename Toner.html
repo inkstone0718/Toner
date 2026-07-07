@@ -902,7 +902,9 @@
 
             function medianSmooth(freq) {
                 freqHistory.push(freq);
-                if (freqHistory.length > 5) freqHistory.shift();
+                // 未插電貝斯訊號較弱，用更大的緩衝視窗挸平跟测値
+                const windowSize = currentInstrument === 'bass' ? 8 : 5;
+                if (freqHistory.length > windowSize) freqHistory.shift();
                 const sorted = [...freqHistory].sort((a, b) => a - b);
                 return sorted[Math.floor(sorted.length / 2)];
             }
@@ -922,14 +924,17 @@
             }
 
             // Autocorrelation pitch detection with noise-resistant refinements:
-            // 1) RMS noise floor gate, 2) Hann window to reduce spectral leakage,
+            // 1) RMS noise floor gate (adaptive for unplugged bass),
+            // 2) Hann window to reduce spectral leakage,
             // 3) clarity (normalized peak) threshold to reject non-tonal noise
             function autoCorrelate(buf, sampleRate) {
                 const SIZE = buf.length;
                 let rms = 0;
                 for (let i = 0; i < SIZE; i++) { rms += buf[i] * buf[i]; }
                 rms = Math.sqrt(rms / SIZE);
-                if (rms < 0.012) return { freq: -1, clarity: 0 }; // 環境噪音底線,太安靜視為無訊號
+                // 未插電貝斯聲音微弱，降低噪音閨值至 0.004；卡達他奇他總是 0.012
+                const rmsThreshold = currentInstrument === 'bass' ? 0.004 : 0.012;
+                if (rms < rmsThreshold) return { freq: -1, clarity: 0 };
 
                 let r1 = 0, r2 = SIZE - 1, thres = 0.2;
                 for (let i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
@@ -963,7 +968,9 @@
                 // 清晰度 = 峰值相對於零延遲能量的比值,越接近 1 代表音高越明確、
                 // 越低代表訊號較接近雜訊而非穩定的樂音
                 const clarity = c[0] > 0 ? maxval / c[0] : 0;
-                if (clarity < 0.85) return { freq: -1, clarity };
+                // 未插電貝斯泛音較少，放寬 clarity 至 0.72；卡達他奇 0.85
+                const clarityThreshold = currentInstrument === 'bass' ? 0.72 : 0.85;
+                if (clarity < clarityThreshold) return { freq: -1, clarity };
 
                 const x1 = c[T0 - 1] || c[T0], x2 = c[T0], x3 = c[T0 + 1] || c[T0];
                 const a = (x1 + x3 - 2 * x2) / 2, b = (x3 - x1) / 2;
@@ -1026,7 +1033,9 @@
                     });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioCtx.createAnalyser();
-                    analyser.fftSize = 2048;
+                    // 貝斯最低弦 E1=41.2Hz，在 44100Hz 採樣下週期約 1073 samples。
+                    // 需要足夠大的 FFT 窗口才能包含完整周期，所以貝斯模式用 4096。
+                    analyser.fftSize = currentInstrument === 'bass' ? 4096 : 2048;
                     dataArray = new Float32Array(analyser.fftSize);
                     mic = audioCtx.createMediaStreamSource(stream);
 
